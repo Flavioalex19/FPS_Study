@@ -13,6 +13,13 @@ public class Shooting : MonoBehaviour
     private float fireTimer = 0f;
     private bool canShoot = true;
 
+    [SerializeField] ParticleSystem _muzzleFlash;
+
+    private void Start()
+    {
+        _muzzleFlash.gameObject.SetActive(false);
+    }
+
     private void Update()
     {
         fireTimer += Time.deltaTime;
@@ -31,6 +38,7 @@ public class Shooting : MonoBehaviour
         Rigidbody bulletRigidbody = bullet.GetComponent<Rigidbody>();
         bulletRigidbody.velocity = bulletSpawnPoint.forward * bulletSpeed;
         */
+        Muzzle();
         GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, bulletSpawnPoint.rotation);
         Rigidbody bulletRigidbody = bullet.GetComponent<Rigidbody>();
         bulletRigidbody.velocity = bulletSpawnPoint.forward * bulletSpeed;
@@ -38,7 +46,13 @@ public class Shooting : MonoBehaviour
         fireTimer = 0f;
         canShoot = false;
     }
-
+    void Muzzle()
+    {
+        _muzzleFlash.gameObject.SetActive(true);
+        ParticleSystem.MainModule mainModule = _muzzleFlash.main;
+        mainModule.stopAction = ParticleSystemStopAction.None;
+        _muzzleFlash.Play();
+    }
     #region Get & Set
     public bool GetCanShoot()
     {

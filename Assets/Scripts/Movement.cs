@@ -32,7 +32,7 @@ public class Movement : MonoBehaviour
     [SerializeField] private float _jumpForce = 5f;
     private bool _isJumping = false;
     bool _canUpperDash = true;
-    private float _verticalVelocity = 0f;
+    float _verticalVelocity = 0f;
     #endregion
 
     #region Camera Variables
@@ -139,7 +139,7 @@ public class Movement : MonoBehaviour
         }
         else
         {
-            _verticalVelocity += Physics.gravity.y * Time.deltaTime;
+            _verticalVelocity += Physics.gravity.y * Time.deltaTime * 2;//Gravity
         }
     }
     public void GroundPound()

@@ -41,7 +41,7 @@ public class PlayerInput : MonoBehaviour
 
         }
 
-        if (Input.GetButtonDown("Fire1"))
+        if (Input.GetButtonDown("Fire1")|| Input.GetButton("Fire1"))
         {
             //If the Semi-auto/hand cannon is enable
             if (_shooting.enabled) 
