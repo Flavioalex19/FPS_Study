@@ -8,7 +8,7 @@ public class PlayerInput : MonoBehaviour
     Movement _movement;
     Shooting _shooting;
     HitScanShooting _hitScanShooting;
-
+    Weapon _weapon;
     CharacterController _characterController;
 
     // Start is called before the first frame update
@@ -17,11 +17,15 @@ public class PlayerInput : MonoBehaviour
         _movement = GetComponent<Movement>();
         _shooting = GameObject.FindGameObjectWithTag("Weapon").GetComponent<Shooting>();
         _hitScanShooting = GameObject.FindGameObjectWithTag("Weapon").GetComponent<HitScanShooting>();
+        _weapon = GameObject.FindGameObjectWithTag("Weapon").GetComponent<Weapon>();
         _characterController = GetComponent<CharacterController>();
 
+        /*
         //Starts with the minigun enable
         _shooting.enabled = false;
         _hitScanShooting.enabled = true;
+        */
+        
     }
 
     // Update is called once per frame
@@ -36,13 +40,17 @@ public class PlayerInput : MonoBehaviour
         //Change the Fire Mode
         if (Input.GetKeyDown(KeyCode.Tab))
         {
+            /*
             _shooting.enabled = !_shooting.enabled;
             _hitScanShooting.enabled = !_hitScanShooting.enabled;
+            */
+            _weapon.ChangeFireMode();
 
         }
 
         if (Input.GetButtonDown("Fire1")|| Input.GetButton("Fire1"))
         {
+            /*
             //If the Semi-auto/hand cannon is enable
             if (_shooting.enabled) 
             {
@@ -54,6 +62,17 @@ public class PlayerInput : MonoBehaviour
                 _hitScanShooting.Shoot();
                 _hitScanShooting.SetFireTimer(0f);
             }
+            */
+            
+            if (_weapon.GetAlternateFireMode())
+            {
+                _weapon.GranadeLauncher();
+            }
+            else if (!_weapon.GetAlternateFireMode())
+            {
+                _weapon.HitScanFire();
+            }
+            
         }
         
         #endregion

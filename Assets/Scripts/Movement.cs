@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Rendering.LookDev;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
@@ -10,6 +11,7 @@ public class Movement : MonoBehaviour
     [SerializeField] float _mouseSensitivity = 2f;
     #endregion
 
+    
     #region Dash Variables
     [Header("Dash Variables")]
     [SerializeField] float _dashDuration = 0.5f;
@@ -46,22 +48,24 @@ public class Movement : MonoBehaviour
     [SerializeField] ParticleSystem _vfx_groundpound;
 
     #region Camera Variables
-    public float shakeDuration = 0.5f;  // Duration of the camera shake
-    public float shakeIntensity = 0.1f;  // Intensity of the camera shake
-    private float verticalRotation = 0f;
-    private Vector3 originalCameraPosition;
-    private Transform cameraTransform;
+    [SerializeField] float _shakeDuration = 0.5f;  // Duration of the camera shake
+    [SerializeField] float _shakeIntensity = 0.1f;  // Intensity of the camera shake
+    float _verticalRotation = 0f;
+    Vector3 _originalCameraPosition;
+    Transform _cameraTransform;
     
     #endregion
 
     #region Components
-    private CharacterController controller;
-    private Camera playerCamera;
+    CharacterController controller;
+    Camera playerCamera;
+    [SerializeField] CameraShake _cameraShake;
+
     #endregion
 
     private void Awake()
     {
-        cameraTransform = Camera.main.transform;
+        _cameraTransform = Camera.main.transform;
     }
 
     void Start()
@@ -71,7 +75,7 @@ public class Movement : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        originalCameraPosition = playerCamera.transform.localPosition;
+        _originalCameraPosition = playerCamera.transform.localPosition;
 
         _vfx_groundpound.gameObject.SetActive(false);
     }
@@ -107,10 +111,10 @@ public class Movement : MonoBehaviour
         float mouseX = Input.GetAxis("Mouse X") * _mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * _mouseSensitivity;
 
-        verticalRotation -= mouseY;
-        verticalRotation = Mathf.Clamp(verticalRotation, -90f, 90f);
+        _verticalRotation -= mouseY;
+        _verticalRotation = Mathf.Clamp(_verticalRotation, -90f, 90f);
 
-        playerCamera.transform.localRotation = Quaternion.Euler(verticalRotation, 0f, 0f);
+        playerCamera.transform.localRotation = Quaternion.Euler(_verticalRotation, 0f, 0f);
         transform.Rotate(Vector3.up * mouseX);
 
         // Bubble head effect
@@ -119,12 +123,14 @@ public class Movement : MonoBehaviour
 
         //float bubbleHeadVerticalOffset = Mathf.Sin(Time.time * bubbleHeadVerticalSpeed) * bubbleHeadVerticalRange;
         //Vector3 bubbleHeadOffset = new Vector3(bubbleHeadX, bubbleHeadY, bubbleHeadVerticalOffset) * bubbleHeadHeight;
-        playerCamera.transform.localPosition = originalCameraPosition; //*+ bubbleHeadOffset*/;
+        playerCamera.transform.localPosition = _originalCameraPosition; //*+ bubbleHeadOffset*/;
 
         // Apply horizontal movement
         movement = transform.forward * verticalMovement + transform.right * horizontalMovement;
         movement.y = _verticalVelocity;
         controller.Move(movement * Time.deltaTime);
+
+        
 
         // Reset _isJumping flag
         if (controller.isGrounded)
@@ -141,14 +147,25 @@ public class Movement : MonoBehaviour
             }
             _isJumping = false;
             _canUpperDash = true;
-            
+
+            //Call the camera shake
+            if (controller.velocity.magnitude > .5f && _isJumping == false)
+            {
+                _cameraShake.ShakeCamera();
+            }
+            else
+            {
+                _cameraShake.StopCameraShake();
+            }
+
+
         }
         
 
     }
     public void ShakeCamera()
     {
-        originalCameraPosition = cameraTransform.localPosition;  // Store the original position of the camera
+        _originalCameraPosition = _cameraTransform.localPosition;  // Store the original position of the camera
 
         // Start the coroutine to shake the camera
         StartCoroutine(ShakeCoroutine());
@@ -158,13 +175,13 @@ public class Movement : MonoBehaviour
     {
         float elapsedTime = 0f;
 
-        while (elapsedTime < shakeDuration)
+        while (elapsedTime < _shakeDuration)
         {
             // Generate a random offset for the camera position
-            Vector3 randomOffset = Random.insideUnitSphere * shakeIntensity;
+            Vector3 randomOffset = Random.insideUnitSphere * _shakeIntensity;
 
             // Apply the random offset to the camera's local position
-            cameraTransform.localPosition = originalCameraPosition + randomOffset;
+            _cameraTransform.localPosition = _originalCameraPosition + randomOffset;
 
             elapsedTime += Time.deltaTime;
 
@@ -172,7 +189,7 @@ public class Movement : MonoBehaviour
         }
 
         // Reset the camera position to the original position after the shake
-        cameraTransform.localPosition = originalCameraPosition;
+        _cameraTransform.localPosition = _originalCameraPosition;
     }
     #region Jump Functions
     public void Jump()
@@ -210,7 +227,7 @@ public class Movement : MonoBehaviour
         foreach (var hitCollider in hitColliders)
         {
             
-            if(hitCollider.tag == "Enemy") hitCollider.GetComponent<Enemy>().TakeDamage(70f);
+            if(hitCollider.tag == "Enemy") hitCollider.GetComponent<Enemy>().TakeDamage(180f);
             VfxGroundPound();
         }
     }

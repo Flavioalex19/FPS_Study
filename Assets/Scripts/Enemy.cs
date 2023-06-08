@@ -12,8 +12,12 @@ public class Enemy : MonoBehaviour
 
     [SerializeField]Image ui_hp_bar;
 
+    
+
     private void Start()
     {
+        
+
         _hp = _maxHP;
     }
     private void Update()
@@ -32,7 +36,9 @@ public class Enemy : MonoBehaviour
 
         if (other.tag == "Bullet")
         {
-            TakeDamage(other.GetComponent<Bullet>().BulletDamage());
+           
+            //TakeDamage(other.GetComponent<Bullet>().BulletDamage());
+            other.GetComponent<Bullet>().Explosion(transform);
             Destroy(other.gameObject);
         }
        
