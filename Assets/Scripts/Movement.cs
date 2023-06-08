@@ -29,22 +29,40 @@ public class Movement : MonoBehaviour
     #endregion
 
     #region Jump Variables
+    [Header("Jump Variables")]
     [SerializeField] private float _jumpForce = 5f;
+    [SerializeField] float _gravityMultiplier = 2f;
     private bool _isJumping = false;
     bool _canUpperDash = true;
     float _verticalVelocity = 0f;
     #endregion
 
+    #region UpperDash Variables
+    [SerializeField] float _upperDashVelocity = 2.5f;
+    [SerializeField] bool _canGroundPound = false;
+    #endregion
+
+    [Header("Ground Pound")]
+    [SerializeField] ParticleSystem _vfx_groundpound;
+
     #region Camera Variables
+    public float shakeDuration = 0.5f;  // Duration of the camera shake
+    public float shakeIntensity = 0.1f;  // Intensity of the camera shake
     private float verticalRotation = 0f;
     private Vector3 originalCameraPosition;
+    private Transform cameraTransform;
+    
     #endregion
 
     #region Components
     private CharacterController controller;
     private Camera playerCamera;
     #endregion
-    
+
+    private void Awake()
+    {
+        cameraTransform = Camera.main.transform;
+    }
 
     void Start()
     {
@@ -54,6 +72,8 @@ public class Movement : MonoBehaviour
         Cursor.visible = false;
 
         originalCameraPosition = playerCamera.transform.localPosition;
+
+        _vfx_groundpound.gameObject.SetActive(false);
     }
 
     void Update()
@@ -94,24 +114,12 @@ public class Movement : MonoBehaviour
         transform.Rotate(Vector3.up * mouseX);
 
         // Bubble head effect
-        float bubbleHeadX = Mathf.Sin(Time.time * bubbleHeadSpeed) * movementIntensity * maxBubbleHeadIntensity;
-        float bubbleHeadY = Mathf.Cos(Time.time * bubbleHeadSpeed) * movementIntensity * maxBubbleHeadIntensity;
+        //float bubbleHeadX = Mathf.Sin(Time.time * bubbleHeadSpeed) * movementIntensity * maxBubbleHeadIntensity;
+        //float bubbleHeadY = Mathf.Cos(Time.time * bubbleHeadSpeed) * movementIntensity * maxBubbleHeadIntensity;
 
-        float bubbleHeadVerticalOffset = Mathf.Sin(Time.time * bubbleHeadVerticalSpeed) * bubbleHeadVerticalRange;
-        Vector3 bubbleHeadOffset = new Vector3(bubbleHeadX, bubbleHeadY, bubbleHeadVerticalOffset) * bubbleHeadHeight;
-        playerCamera.transform.localPosition = originalCameraPosition + bubbleHeadOffset;
-
-        /*
-        if(Input.GetKeyDown(KeyCode.Space)) _isUpperDashing = true;
-        if (_isUpperDashing)
-        {
-            // Apply vertical velocity
-            Vector3 jumpVector = new Vector3(0f, _dashSpeed, 0f);
-            controller.Move(jumpVector * Time.deltaTime);
-        }
-        */
-        // Jump input
-        
+        //float bubbleHeadVerticalOffset = Mathf.Sin(Time.time * bubbleHeadVerticalSpeed) * bubbleHeadVerticalRange;
+        //Vector3 bubbleHeadOffset = new Vector3(bubbleHeadX, bubbleHeadY, bubbleHeadVerticalOffset) * bubbleHeadHeight;
+        playerCamera.transform.localPosition = originalCameraPosition; //*+ bubbleHeadOffset*/;
 
         // Apply horizontal movement
         movement = transform.forward * verticalMovement + transform.right * horizontalMovement;
@@ -121,11 +129,52 @@ public class Movement : MonoBehaviour
         // Reset _isJumping flag
         if (controller.isGrounded)
         {
+            if (_isJumping)
+            {
+                //AOI for the ground pound attack---TODO Change this to another script
+                if (_canGroundPound)
+                {
+                    GroundPoundAOI();
+                    ShakeCamera();
+                    _canGroundPound = false;
+                }
+            }
             _isJumping = false;
             _canUpperDash = true;
+            
         }
+        
 
     }
+    public void ShakeCamera()
+    {
+        originalCameraPosition = cameraTransform.localPosition;  // Store the original position of the camera
+
+        // Start the coroutine to shake the camera
+        StartCoroutine(ShakeCoroutine());
+    }
+
+    private IEnumerator ShakeCoroutine()
+    {
+        float elapsedTime = 0f;
+
+        while (elapsedTime < shakeDuration)
+        {
+            // Generate a random offset for the camera position
+            Vector3 randomOffset = Random.insideUnitSphere * shakeIntensity;
+
+            // Apply the random offset to the camera's local position
+            cameraTransform.localPosition = originalCameraPosition + randomOffset;
+
+            elapsedTime += Time.deltaTime;
+
+            yield return null;
+        }
+
+        // Reset the camera position to the original position after the shake
+        cameraTransform.localPosition = originalCameraPosition;
+    }
+    #region Jump Functions
     public void Jump()
     {
         if (controller.isGrounded)
@@ -133,13 +182,15 @@ public class Movement : MonoBehaviour
             _verticalVelocity = -0.5f; // Reset vertical velocity
             if (Input.GetButtonDown("Jump"))
             {
+                //_canGroundPound = true;
                 _isJumping = true;
                 _verticalVelocity = _jumpForce;
             }
         }
         else
         {
-            _verticalVelocity += Physics.gravity.y * Time.deltaTime * 2;//Gravity
+            
+            _verticalVelocity += Physics.gravity.y * Time.deltaTime * _gravityMultiplier;//Gravity
         }
     }
     public void GroundPound()
@@ -148,9 +199,27 @@ public class Movement : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
-                _verticalVelocity = -_jumpForce;
+                _canGroundPound = true;
+                _verticalVelocity = -_jumpForce * 2;
             }
         }
+    }
+    void GroundPoundAOI()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 5f);
+        foreach (var hitCollider in hitColliders)
+        {
+            
+            if(hitCollider.tag == "Enemy") hitCollider.GetComponent<Enemy>().TakeDamage(70f);
+            VfxGroundPound();
+        }
+    }
+    void VfxGroundPound()
+    {
+        _vfx_groundpound.gameObject.SetActive(true);
+        ParticleSystem.MainModule mainModule = _vfx_groundpound.main;
+        mainModule.stopAction = ParticleSystemStopAction.None;
+        _vfx_groundpound.Play();
     }
     public void UpperDash()
     {
@@ -161,12 +230,13 @@ public class Movement : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Q))
                 {
                     _canUpperDash = false;
-                    _verticalVelocity = _jumpForce * 3f;
+                    _verticalVelocity = _jumpForce * _upperDashVelocity;
                 }
             }
             
         }
     }
+    #endregion
 
     #region Get & Set
     public bool GetIsDashing()

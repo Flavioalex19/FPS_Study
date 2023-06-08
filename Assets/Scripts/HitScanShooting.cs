@@ -38,7 +38,8 @@ public class HitScanShooting : MonoBehaviour
         {
             // Perform hit logic
             Debug.Log("Hit: " + hit.transform.name);
-
+            Enemy enemy = hit.transform.GetComponent<Enemy>();
+            enemy.TakeDamage(damage);
             /*
             // Apply damage to the hit object if it has a Health component
             Health health = hit.transform.GetComponent<Health>();
