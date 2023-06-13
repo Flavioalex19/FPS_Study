@@ -11,6 +11,8 @@ public class Bullet : MonoBehaviour
     [SerializeField] ParticleSystem _vfx_explosion;
     bool _canExplode = false;
 
+    [SerializeField] AudioSource _sfx_explosion;
+
     
 
     private void Start()
@@ -56,5 +58,9 @@ public class Bullet : MonoBehaviour
         */
         ParticleSystem explosion = Instantiate(_vfx_explosion, hitPosition.position, Quaternion.identity);
         _vfx_explosion.Play();
+        AudioSource audioSource = Instantiate(_sfx_explosion, hitPosition.position, Quaternion.identity); 
+        audioSource.Play();
+        //_sfx_explosion.Play();
+        
     }
 }

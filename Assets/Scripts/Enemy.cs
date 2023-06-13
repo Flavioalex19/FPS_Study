@@ -16,8 +16,6 @@ public class Enemy : MonoBehaviour
 
     private void Start()
     {
-        
-
         _hp = _maxHP;
     }
     private void Update()

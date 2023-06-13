@@ -46,7 +46,9 @@ public class Movement : MonoBehaviour
 
     [Header("Ground Pound")]
     [SerializeField] ParticleSystem _vfx_groundpound;
+    [SerializeField] AudioSource _sfx_groundpound;
 
+    [Header("Camera Shake Variables")]
     #region Camera Variables
     [SerializeField] float _shakeDuration = 0.5f;  // Duration of the camera shake
     [SerializeField] float _shakeIntensity = 0.1f;  // Intensity of the camera shake
@@ -77,7 +79,7 @@ public class Movement : MonoBehaviour
 
         _originalCameraPosition = playerCamera.transform.localPosition;
 
-        _vfx_groundpound.gameObject.SetActive(false);
+        //_vfx_groundpound.gameObject.SetActive(false);
     }
 
     void Update()
@@ -210,6 +212,7 @@ public class Movement : MonoBehaviour
             _verticalVelocity += Physics.gravity.y * Time.deltaTime * _gravityMultiplier;//Gravity
         }
     }
+    #region Groundpound
     public void GroundPound()
     {
         if (_isJumping)
@@ -223,7 +226,7 @@ public class Movement : MonoBehaviour
     }
     void GroundPoundAOI()
     {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 5f);
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 10f);
         foreach (var hitCollider in hitColliders)
         {
             
@@ -233,11 +236,21 @@ public class Movement : MonoBehaviour
     }
     void VfxGroundPound()
     {
+        /*
         _vfx_groundpound.gameObject.SetActive(true);
         ParticleSystem.MainModule mainModule = _vfx_groundpound.main;
         mainModule.stopAction = ParticleSystemStopAction.None;
         _vfx_groundpound.Play();
+        */
+        ParticleSystem groundPound = Instantiate(_vfx_groundpound, transform.position, Quaternion.identity);
+        groundPound.Play();
     }
+    void SFXGroudnpound()
+    {
+        AudioSource audioSource = Instantiate(_sfx_groundpound, _sfx_groundpound.transform.position, Quaternion.identity);
+        audioSource.Play();
+    }
+    #endregion
     public void UpperDash()
     {
         if (_isJumping)

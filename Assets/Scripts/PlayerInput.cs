@@ -68,7 +68,7 @@ public class PlayerInput : MonoBehaviour
             {
                 _weapon.GranadeLauncher();
             }
-            else if (!_weapon.GetAlternateFireMode())
+            else if (!_weapon.GetAlternateFireMode() && !_weapon.GetHasOverheated())
             {
                 _weapon.HitScanFire();
             }

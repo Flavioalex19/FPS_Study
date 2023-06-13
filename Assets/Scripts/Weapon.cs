@@ -7,12 +7,12 @@ public class Weapon : MonoBehaviour
     #region Rifle Variables
     [Header("Rifle Variables")]
     [SerializeField] float damage = 10f;//Damage
-    [SerializeField] float fireRate = 0.1f;
+    [SerializeField] float _fireRate = 0.1f;
     [SerializeField] float range = 100f;
     [SerializeField] float _maxOverheatValue = 100;
-    [SerializeField] float _overheatMultiplier = .5f;
-    float _currentOverheatValue = 0;
-    bool _hasOverheated = false;
+    [SerializeField] float _overheatMultiplier = 2f;
+    public float _currentOverheatValue = 0;
+    public bool _hasOverheated = false;
     [SerializeField] LayerMask _hitLayers;//What you can hit/deal damage
     #endregion
 
@@ -40,7 +40,11 @@ public class Weapon : MonoBehaviour
     [Header("Camera")]
     public Camera PlayerCamera;
 
-    public bool _alternateFire = false;
+    [SerializeField] AudioSource _sfx_rifle;
+    [SerializeField] AudioClip _sfx_rifle_clip;
+    [SerializeField] AudioClip _sfx_grenade_clip;
+
+    bool _alternateFire = false;
     private void Awake()
     {
         _originalPosition = _weaponTransform.localPosition;
@@ -49,41 +53,67 @@ public class Weapon : MonoBehaviour
     void Start()
     {
         _muzzleFlash.gameObject.SetActive(false);
+        //_sfx_rifle.gameObject.SetActive(false);
     }
     private void Update()
     {
-        if (_currentOverheatValue > _maxOverheatValue)
+        #region Overheat update
+        //Enter overheat state
+        if (_currentOverheatValue > _maxOverheatValue -2 && !_hasOverheated)
         {
             _hasOverheated = true;
         }
+        
+        //Initiate cooldown after arrive ate the overheat state
         if (_hasOverheated)
         {
-            while(_currentOverheatValue > 0)
-            {
-                _currentOverheatValue-=Time.deltaTime * 2;
-            }
+            _currentOverheatValue -= Time.deltaTime;
+            
         }
-        if(!isRecoiling && _currentOverheatValue > 0)
+        //Reset the current overheat value
+        if (_currentOverheatValue < 0 && _hasOverheated)
         {
-            _currentOverheatValue -= Time.deltaTime * 5;
+            _hasOverheated = false;
+            _currentOverheatValue = 0;
         }
+        else if(_currentOverheatValue > 0 && !_hasOverheated) _currentOverheatValue -= Time.deltaTime * .5f;
+
+
+        #endregion
+
+        #region Fire Timer
         _fireTimer += Time.deltaTime;
         if (_alternateFire)
         {
-            if (_fireTimer >= fireRate)
+            if (_fireTimer >= _fireRate)
             {
                 canShoot = true;
             }
         }
-        
+        else
+        {
+            if (_fireTimer >= _fireRate)
+            {
+                canShoot = true;
+                _fireTimer = 0;
+            }
+        }
+        #endregion
+        #region Alternate Fire
         if (_alternateFire)
         {
-            fireRate = .5f;
+            _sfx_rifle.clip = _sfx_grenade_clip;
+            _sfx_rifle.volume = 1;
+            _fireRate = .5f;
         }
         else
         {
-            fireRate = .1f;
+            _sfx_rifle.clip = _sfx_rifle_clip;
+            _sfx_rifle.volume = .2f;
+            _fireRate = .2f;
         }
+        #endregion
+        #region Recoil
         //Execution of the recoil
         if (isRecoiling)
         {
@@ -106,16 +136,20 @@ public class Weapon : MonoBehaviour
                 StopRecoil();
             }
         }
+        #endregion
     }
     public void ChangeFireMode()
     {
         _alternateFire = !_alternateFire;
     }
+    #region hitScan/Minigun
     public void HitScanFire()
     {
+        if (!canShoot) return;
         _currentOverheatValue += Time.deltaTime * _overheatMultiplier;
         ApplyRecoil();
         Muzzle();
+        _sfx_rifle.Play();
         //fireRate = .1f;
         Ray ray = PlayerCamera.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f, 0f));
         RaycastHit hit;
@@ -134,12 +168,33 @@ public class Weapon : MonoBehaviour
                 health.TakeDamage(damage);
             }*/
         }
+        canShoot = false;
+        ResetFireRate(canShoot);
     }
+    void ResetFireRate(bool canFire)
+    {
+        /*
+        //yield return new WaitForSeconds(_fireRate);
+        float timer = 0;
+        while(timer < _fireRate)
+        {
+            timer += Time.deltaTime;
+        }
+        canFire = true;*/
+        StartCoroutine(ResetFireRateCoroutine(canFire));
+    }
+    IEnumerator ResetFireRateCoroutine(bool canFire)
+    {
+        yield return new WaitForSeconds(_fireRate);
+        canFire = true;
+    }
+    #endregion
     public void GranadeLauncher()
     {
         if (canShoot)
         {
             Muzzle();
+            _sfx_rifle.Play();
             GameObject bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, bulletSpawnPoint.rotation);
             Rigidbody bulletRigidbody = bullet.GetComponent<Rigidbody>();
             bulletRigidbody.velocity = bulletSpawnPoint.forward * bulletSpeed;
@@ -156,6 +211,9 @@ public class Weapon : MonoBehaviour
         mainModule.stopAction = ParticleSystemStopAction.None;
         _muzzleFlash.Play();
     }
+    #region Sfx Rifle
+    
+    #endregion
     #region Recoil
     //Recoil
     public void ApplyRecoil()
