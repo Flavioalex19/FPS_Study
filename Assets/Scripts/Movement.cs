@@ -21,6 +21,7 @@ public class Movement : MonoBehaviour
     bool _isUpperDashing = false;
     #endregion
 
+    /*
     #region Bubble Head
     [Header("Bubble Head")]
     [SerializeField] float bubbleHeadSpeed = 1f;
@@ -29,7 +30,7 @@ public class Movement : MonoBehaviour
     [SerializeField] float bubbleHeadVerticalSpeed = 1f;
     [SerializeField] float bubbleHeadVerticalRange = 0.5f;
     #endregion
-
+    */
     #region Jump Variables
     [Header("Jump Variables")]
     [SerializeField] private float _jumpForce = 5f;
@@ -48,7 +49,7 @@ public class Movement : MonoBehaviour
     [SerializeField] ParticleSystem _vfx_groundpound;
     [SerializeField] AudioSource _sfx_groundpound;
 
-    [Header("Camera Shake Variables")]
+    [Header("Camera Shake - Groundpound Variables")]
     #region Camera Variables
     [SerializeField] float _shakeDuration = 0.5f;  // Duration of the camera shake
     [SerializeField] float _shakeIntensity = 0.1f;  // Intensity of the camera shake
@@ -165,6 +166,8 @@ public class Movement : MonoBehaviour
         
 
     }
+
+    #region Camera shake for walking
     public void ShakeCamera()
     {
         _originalCameraPosition = _cameraTransform.localPosition;  // Store the original position of the camera
@@ -193,6 +196,8 @@ public class Movement : MonoBehaviour
         // Reset the camera position to the original position after the shake
         _cameraTransform.localPosition = _originalCameraPosition;
     }
+    #endregion
+
     #region Jump Functions
     public void Jump()
     {

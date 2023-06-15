@@ -11,6 +11,9 @@ public class PlayerInput : MonoBehaviour
     Weapon _weapon;
     CharacterController _characterController;
 
+    //testing only
+    public Animator _animator_minigun;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -50,6 +53,7 @@ public class PlayerInput : MonoBehaviour
 
         if (Input.GetButtonDown("Fire1")|| Input.GetButton("Fire1"))
         {
+            _animator_minigun.SetBool("isFiring", true);
             /*
             //If the Semi-auto/hand cannon is enable
             if (_shooting.enabled) 
@@ -63,18 +67,21 @@ public class PlayerInput : MonoBehaviour
                 _hitScanShooting.SetFireTimer(0f);
             }
             */
-            
+
             if (_weapon.GetAlternateFireMode())
             {
                 _weapon.GranadeLauncher();
             }
             else if (!_weapon.GetAlternateFireMode() && !_weapon.GetHasOverheated())
             {
+                
                 _weapon.HitScanFire();
             }
             
+
         }
-        
+        else _animator_minigun.SetBool("isFiring", false);
+
         #endregion
 
         #region Dash input

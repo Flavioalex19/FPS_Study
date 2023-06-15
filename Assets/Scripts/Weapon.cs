@@ -39,11 +39,11 @@ public class Weapon : MonoBehaviour
     [SerializeField] ParticleSystem _muzzleFlash;
     [Header("Camera")]
     public Camera PlayerCamera;
-
+    #region SFX
     [SerializeField] AudioSource _sfx_rifle;
     [SerializeField] AudioClip _sfx_rifle_clip;
     [SerializeField] AudioClip _sfx_grenade_clip;
-
+    #endregion
     bool _alternateFire = false;
     private void Awake()
     {
@@ -110,7 +110,7 @@ public class Weapon : MonoBehaviour
         {
             _sfx_rifle.clip = _sfx_rifle_clip;
             _sfx_rifle.volume = .2f;
-            _fireRate = .2f;
+            _fireRate = .05f;
         }
         #endregion
         #region Recoil
