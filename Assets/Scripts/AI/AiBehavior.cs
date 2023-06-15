@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AI;
 
 public enum AIState
 {
@@ -13,21 +14,28 @@ public enum AIState
 }
 public class AiBehavior : MonoBehaviour
 {
-    public AIState currentState = AIState.Patrolling;
-    public float patrolSpeed = 3f;
-    public float waitTime = 2f;
-    public float fieldOfViewAngle = 90f;
-    public float viewDistance = 10f;
-    public LayerMask targetMask;
-    public List<Transform> waypoints = new List<Transform>();
-    public Transform _target;
+    public AIState CurrentState = AIState.Patrolling;
+    [SerializeField] float patrolSpeed = 3f;
+    [SerializeField] float waitTime = 2f;
+    [SerializeField] float fieldOfViewAngle = 90f;
+    [SerializeField] float viewDistance = 10f;
+    [SerializeField] LayerMask targetMask;
+    [SerializeField] List<Transform> waypoints = new List<Transform>();
+    [SerializeField] Transform _target;
 
-    private int currentWaypointIndex = 0;
-    private float waitTimer = 0f;
+    int _currentWaypointIndex = 0;
+    float _waitTimer = 0f;
+
+    NavMeshAgent _agent;
+
+    private void Start()
+    {
+        _agent = GetComponent<NavMeshAgent>();
+    }
 
     private void Update()
     {
-        switch (currentState)
+        switch (CurrentState)
         {
             case AIState.Patrolling:
                 Patrol();
@@ -47,7 +55,7 @@ public class AiBehavior : MonoBehaviour
         }
 
         // Check if there is a player in the field of view
-        if (currentState != AIState.Shooting)
+        if (CurrentState != AIState.Shooting)
         {
             if (DetectPlayer())
             {
@@ -58,21 +66,28 @@ public class AiBehavior : MonoBehaviour
 
     private void Patrol()
     {
-        // Move towards the current waypoint
-        Vector3 targetPosition = waypoints[currentWaypointIndex].position;
-
-        // Rotate towards the waypoint
+        // Rotate towards the current waypoint
+        Vector3 targetPosition = waypoints[_currentWaypointIndex].position;
         Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 2f);
 
         // Check if rotation is close enough to the target
         if (Quaternion.Angle(transform.rotation, targetRotation) < 1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, patrolSpeed * Time.deltaTime);
+            // Delay rotation before moving
+            _waitTimer += Time.deltaTime;
+
+            if (_waitTimer >= 5f)
+            {
+                _waitTimer = 0f;
+                _agent.isStopped = false;
+                // Move towards the current waypoint
+                _agent.SetDestination(targetPosition);
+            }
         }
 
         // Check if reached the waypoint
-        if (transform.position == targetPosition)
+        if (_agent.remainingDistance <= _agent.stoppingDistance)
         {
             ChangeState(AIState.Waiting);
         }
@@ -81,12 +96,12 @@ public class AiBehavior : MonoBehaviour
     private void Wait()
     {
         // Start waiting timer
-        waitTimer += Time.deltaTime;
+        _waitTimer += Time.deltaTime;
 
         // Check if waiting time is over
-        if (waitTimer >= waitTime)
+        if (_waitTimer >= waitTime)
         {
-            waitTimer = 0f;
+            _waitTimer = 0f;
             ChangeState(AIState.Patrolling);
         }
     }
@@ -95,11 +110,15 @@ public class AiBehavior : MonoBehaviour
     {
         // Perform looking behavior (e.g., rotate the AI character's head)
 
-        // Example Gizmo for visualizing field of view
-        Handles.color = Color.yellow;
-        Handles.DrawWireArc(transform.position, transform.up, transform.forward, fieldOfViewAngle, viewDistance);
+        if(_target == null)
+        {
+            // Example Gizmo for visualizing field of view
+            Handles.color = Color.yellow;
+            Handles.DrawWireArc(transform.position, transform.up, transform.forward, fieldOfViewAngle, viewDistance);
+        }
+        
     }
-
+    //Aim at waypoint or target
     private void Aim()
     {
         if (_target != null)
@@ -129,6 +148,8 @@ public class AiBehavior : MonoBehaviour
     private void Shoot()
     {
         // Perform shooting behavior
+        _agent.isStopped = true;
+        Aim();
 
         if (!DetectPlayer())
         {
@@ -164,13 +185,14 @@ public class AiBehavior : MonoBehaviour
 
     private void ChangeState(AIState newState)
     {
-        currentState = newState;
+        CurrentState = newState;
 
         switch (newState)
         {
             case AIState.Patrolling:
-                // Choose the next waypoint
-                currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Count;
+                //_currentWaypointIndex = (_currentWaypointIndex + 1) % waypoints.Count;
+                _currentWaypointIndex = Random.Range(0, waypoints.Count);
+                _agent.SetDestination(waypoints[_currentWaypointIndex].position);
                 break;
             case AIState.Waiting:
                 // Optionally, play a waiting animation or perform any necessary setup
